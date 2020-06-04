@@ -10,7 +10,7 @@ using namespace std;
 
 int map[40][70] = { 0, };
 int stage = 1;
-int counter = 0;
+int run=0;
 WINDOW* screen;
 int inputKey;
 int currentHead = 2;  // 초기 snake의 방향 : 왼쪽
@@ -59,10 +59,11 @@ void move(int direction) {
 
 
 //stage별 맵 구현
-void gmap(int runtime,int stage) {
+void gmap(int stage,int runtime) {
 	srand((unsigned int)time(NULL));
 	int maxX, maxY;
 	if (stage == 1) {
+		int counter = 0;
 		wclear(screen);
 		screen = newwin(40, 70, 2, 2);
 		getmaxyx(stdscr, maxY, maxX);
@@ -85,32 +86,41 @@ void gmap(int runtime,int stage) {
 				}
 			}
 		}
-		//gate 출력(임시)
-		if (runtime % 10 >= 1 && runtime <= 2) {
-			while (counter < 2) {
-				int g1 = rand() % 40;
-				int g2 = rand() % 70;
-				if (map[g1][g2] == 1) {
-					if (counter == 0) {
-						map[g1][g2] = 7;
-						wmove(screen, g1, g2);
-						waddch(screen, 'G');
-					}
-					else {
-						map[g1][g2] = 8;
-						wmove(screen, g1, g2);
-						waddch(screen, 'G');
-					}
-					counter++;
-				}
-			}
-		}
 		wrefresh(screen);
 	}
 	else if(stage == 2) {
+		int counter = 0;
+		wclear(screen);
+		int map[36][63] = { 0, };
+		screen = newwin(36, 63, 5,5);
+		getmaxyx(stdscr, maxY, maxX);
+		for (int y = 0; y < 36; y++) {
+			for (int x = 0; x < 63; x++) {
+				if (y == 0 && (x == 0 || x == 63) || (y == 35 && (x == 0 || x == 63))) {
+					map[y][x] = 2;
+					wmove(screen, y, x);
+					waddch(screen, '+');
+				}
+				else if (x == 0 || x == 63) {
+					map[y][x] = 1;
+					wmove(screen, y, x);
+					waddch(screen, '|');
+				}
+				else if (y == 0 || y == 35) {
+					map[y][x] = 1;
+					wmove(screen, y, x);
+					waddch(screen, '-');
+				}
+			}
+		}
+		
+		wrefresh(screen);
+	}
+	else if (stage == 3) {
+		int counter = 0;
 		wclear(screen);
 		int map[32][56] = { 0, };
-		screen = newwin(32, 56, 7,7);
+		screen = newwin(32, 56, 7, 7);
 		getmaxyx(stdscr, maxY, maxX);
 		for (int y = 0; y < 32; y++) {
 			for (int x = 0; x < 56; x++) {
@@ -131,7 +141,39 @@ void gmap(int runtime,int stage) {
 				}
 			}
 		}
-		if (runtime % 10 >= 1 && runtime <= 2) {
+		
+		wrefresh(screen);
+	}
+	else if (stage == 4) {
+		int gp1, gp2;
+		int gp3, gp4;
+		int counter = 0;
+		int test = 0;
+		wclear(screen);
+		int map[32][56] = { 0, };
+
+		screen = newwin(32, 56, 7, 7);
+		getmaxyx(stdscr, maxY, maxX);
+		for (int y = 0; y < 32; y++) {
+			for (int x = 0; x < 56; x++) {
+				if (y == 0 && (x == 0 || x == 55) || (y == 31 && (x == 0 || x == 55))) {
+					map[y][x] = 2;
+					wmove(screen, y, x);
+					waddch(screen, '+');
+				}
+				else if (x == 0 || x == 55) {
+					map[y][x] = 1;
+					wmove(screen, y, x);
+					waddch(screen, '|');
+				}
+				else if (y == 0 || y == 31) {
+					map[y][x] = 1;
+					wmove(screen, y, x);
+					waddch(screen, '-');
+				}
+			}
+		}
+		/*if (runtime % 30 == 1) {
 			while (counter < 2) {
 				int g1 = rand() % 32;
 				int g2 = rand() % 56;
@@ -149,101 +191,13 @@ void gmap(int runtime,int stage) {
 					counter++;
 				}
 			}
-		}
-		wrefresh(screen);
-	}
-	else if (stage == 3) {
-		wclear(screen);
-		int map[24][42] = { 0, };
-		screen = newwin(24, 42, 12, 12);
-		getmaxyx(stdscr, maxY, maxX);
-		for (int y = 0; y < 24; y++) {
-			for (int x = 0; x < 42; x++) {
-				if (y == 0 && (x == 0 || x == 41) || (y == 23 && (x == 0 || x == 41))) {
-					map[y][x] = 2;
-					wmove(screen, y, x);
-					waddch(screen, '+');
-				}
-				else if (x == 0 || x == 41) {
-					map[y][x] = 1;
-					wmove(screen, y, x);
-					waddch(screen, '|');
-				}
-				else if (y == 0 || y == 23) {
-					map[y][x] = 1;
-					wmove(screen, y, x);
-					waddch(screen, '-');
-				}
-			}
-		}
-		if (runtime % 10 >= 1 && runtime <= 2) {
-			while (counter < 2) {
-				int g1 = rand() % 24;
-				int g2 = rand() % 42;
-				if (map[g1][g2] == 1) {
-					if (counter == 0) {
-						map[g1][g2] = 7;
-						wmove(screen, g1, g2);
-						waddch(screen, 'G');
-					}
-					else {
-						map[g1][g2] = 8;
-						wmove(screen, g1, g2);
-						waddch(screen, 'G');
-					}
-					counter++;
-				}
-			}
-		}
-		wrefresh(screen);
-	}
-	else if (stage == 4) {
-		wclear(screen);
-		int map[20][35] = { 0, };
-		screen = newwin(20, 35, 17, 17);
-		getmaxyx(stdscr, maxY, maxX);
-		for (int y = 0; y < 20; y++) {
-			for (int x = 0; x < 35; x++) {
-				if (y == 0 && (x == 0 || x == 34) || (y == 19 && (x == 0 || x == 34))) {
-					map[y][x] = 2;
-					wmove(screen, y, x);
-					waddch(screen, '+');
-				}
-				else if (x == 0 || x == 34) {
-					map[y][x] = 1;
-					wmove(screen, y, x);
-					waddch(screen, '|');
-				}
-				else if (y == 0 || y == 19) {
-					map[y][x] = 1;
-					wmove(screen, y, x);
-					waddch(screen, '-');
-				}
-			}
-		}
-		if (runtime % 10 >= 1 && runtime <= 2) {
-			while (counter < 2) {
-				int g1 = rand() % 20;
-				int g2 = rand() % 35;
-				if (map[g1][g2] == 1) {
-					if (counter == 0) {
-						map[g1][g2] = 7;
-						wmove(screen, g1, g2);
-						waddch(screen, 'G');
-					}
-					else {
-						map[g1][g2] = 8;
-						wmove(screen, g1, g2);
-						waddch(screen, 'G');
-					}
-					counter++;
-				}
-			}
-		}
-	
+		}*/
 		wrefresh(screen);
 	}
 
+}
+void gate(int runtime) {
+	
 }
 //mission창 score창 프린트
 void mission_score() {
@@ -273,12 +227,7 @@ int main() {
 	resize_term(45, 110);
 	noecho();
 	border('o', 'o', 'o', 'o', 'o', 'o', 'o', 'o');
-	refresh();
-	gmap(1,5);
-	mission_score();
-	// Step 5 : mission, socre
-	
-
+	refresh();	
 	setlocale(LC_ALL, "");
 	initscr();
 	nodelay(stdscr, TRUE);
@@ -297,14 +246,12 @@ int main() {
 		if (i == 0) mvprintw(xPos[i], yPos[i], "O");
 		else mvprintw(xPos[i], yPos[i], "o");
 	}
-	
-	while (true) {
-		if (stage == 2) {
-			gmap(1,stage);
-		}
+	while (true) {		
+		gmap(4,run);
 		mission_score();
 		move(currentHead);
 		usleep(100000);  // 0.5초마다
+		run++;
 	}
 
 	refresh();
