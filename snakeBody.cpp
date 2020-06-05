@@ -260,7 +260,7 @@ void growthItem(){
 		preyY = (rand() % width - 1) + 1;
 	}
 	map[preyX][preyY] = 5;
-	mvwprintw(preyX, preyY, "\u2B1C");
+	mvwprintw(preyX, preyY, "*");
 }
 
 // 독 생성 위치를 map의 값이 0인 곳 중 랜덤으로 지정
@@ -277,7 +277,7 @@ poisonY = (rand() % width - 1) + 1;
 		poisonY = (rand() % width - 1) + 1;
 	}
 	map[poisonX][poisonY] = 6;
-	mvwprintw(poisonX, poisonY, "\u2B1B");
+	mvwprintw(poisonX, poisonY, "@");
 }
 
 void gate(int runtime) {
