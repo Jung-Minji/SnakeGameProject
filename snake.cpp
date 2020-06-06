@@ -6,20 +6,25 @@
 #include <ctime>
 #include <unistd.h>
 #include <ncurses.h>
+#include <thread>
 using namespace std;
-
+using namespace std::chrono;
 
 int map[40][70] = { 0, };
+int map2[40][70] = {0, };
 int stage = 1;
-int gateOneY, gateOneX, gateTwoY, gateTwoX; //gate 좌표
-int run = 0;
+int run=0;
 WINDOW* screen;
 int inputKey;
 int currentHead = 2;  // 초기 snake의 방향 : 왼쪽
 bool checkFail = false;
 bool checkPrey = false;
 bool checkPoison = false;
-int preyX, preyY, poisonX, poisonY;
+int height, width;
+int preyX = 1, preyY = 1, poisonX = 1, poisonY = 1;
+int countPrey = 0, countPoison = 0;
+int gateOneY, gateOneX, gateTwoY, gateTwoX; //gate 좌표
+
 
 int headDirection[4][2] = {
   {-1, 0}, {1, 0}, {0, -1}, {0, 1}
@@ -28,8 +33,13 @@ int headDirection[4][2] = {
 vector <int> xPos;  // snake의 x좌표가 있는 벡터
 vector <int> yPos;  // snake의 y좌표가 있는 벡터
 
+void moveSnake(int);
 bool gameOver();
 void growthItem();
+void poisonItem();
+void moveSnake(int);
+void gate(int);
+void mission_score();
 
 //stage별 맵 구현
 void drawmap(int stage) {
@@ -66,7 +76,7 @@ void drawmap(int stage) {
 					wmove(screen, y, x);
 					waddch(screen, 'o');
 				}
-				
+
 			}
 		}
 
@@ -167,6 +177,177 @@ void drawmap(int stage) {
 		wrefresh(screen);
 	}*/
 }
+
+void startGame(){
+  while (true) {
+    moveSnake(currentHead);
+    //백번마다 G위치 바꾸기
+    if (run % 100 == 1) {
+      gate(1);
+    }
+    drawmap(1);
+    mission_score();
+    if(checkFail) break;
+    usleep(100000);  // 0.5초마다
+    run++;
+  }
+}
+// snake 좌표 이동
+void moveSnake(int direction) {
+	inputKey = wgetch(stdscr);
+	// 그 전 방향에 따라  제약조건 추가
+	if (inputKey == KEY_UP && currentHead != 1) {
+		currentHead = 0;
+	}
+	else if (inputKey == KEY_DOWN && currentHead != 0) {
+		currentHead = 1;
+	}
+	else if (inputKey == KEY_LEFT && currentHead != 3) {
+		currentHead = 2;
+	}
+	else if (inputKey == KEY_RIGHT && currentHead != 2) {
+		currentHead = 3;
+	}
+	for (int i = 0; i < xPos.size(); i++) {  // 이전의 snake를 지움
+		mvprintw(xPos[i], yPos[i], " ");
+    map[xPos[i]][yPos[i]] = 0;
+	}
+
+	for (int i = xPos.size(); i > 0; i--) {  // head를 제외한 body를 한 칸씩 옮김
+		xPos[i] = xPos[i - 1];
+		yPos[i] = yPos[i - 1];
+	}
+
+	xPos[0] = xPos[0] + headDirection[direction][0]; // 방향키에 따라 head의 좌표 재설정
+	yPos[0] = yPos[0] + headDirection[direction][1];
+
+
+  // 먹이를 먹은 경우
+  if(map[xPos[0]][yPos[0]] == 5){
+    // 몸의 길이가 진행방향으로 증가
+    xPos.insert(xPos.begin(), preyX);
+    yPos.insert(yPos.begin(), preyY);
+    countPrey++;
+    checkPrey = true;
+  }
+  else{
+    checkPrey = false;
+  }
+
+  // 독을 먹은 경우
+  if(map[xPos[0]][yPos[0]] == 6){
+    // 꼬리 1 감소
+    xPos.pop_back();
+    yPos.pop_back();
+    countPoison++;
+    checkPoison = true;
+  }
+  else{
+    checkPoison = false;
+  }
+
+
+  // 몸의 길이가 3보다 작아진 경우 -> game over
+  if(xPos.size() < 3) checkFail = true;
+
+  //벽과 출돌한 경우 -> game over
+  if(map[xPos[0]][yPos[0]] == 1) checkFail = true;
+
+  // Tail방향으로 움직인 경우 -> game over
+  if ((inputKey == KEY_UP && currentHead == 1) || (inputKey == KEY_DOWN && currentHead == 0)
+      || (inputKey == KEY_LEFT && currentHead == 3) || (inputKey == KEY_RIGHT && currentHead == 2))
+    checkFail = true;
+
+  if(checkFail){
+     mvprintw(16, 30, "**GAME OVER**");
+     return;
+  }
+  for(int i=0; i<xPos.size(); i++){  // map에 snake값 할당
+    if (i == 0) map[xPos[i]][yPos[i]] = 3;
+    else map[xPos[i]][yPos[i]] = 4;
+  }
+
+
+  for (int i = 0; i < xPos.size(); i++) {  // 화면상에 snake출력
+    if (i == 0) mvprintw(xPos[i], yPos[i], "O");
+    else mvprintw(xPos[i], yPos[i], "o");
+  }
+}
+
+void setItem(){
+  while(!checkFail){
+    sleep(5);
+    thread t1(growthItem);
+    thread t2(poisonItem);
+    t1.join();
+    t2.join();
+  }
+}
+// 먹이 생성 위치를 map의 값이 0인 곳 중 랜덤으로 지정
+void growthItem(){
+  mvprintw(preyX, preyY, " ");
+  if(!checkPrey){  // 이전 먹이를 먹지 못했다면 다시 map의 값을 0로 바꾼다.
+    map[preyX][preyY] = 0;
+  }
+
+  if(stage == 1){
+    width = 70;
+    height = 40;
+  }
+  else if(stage == 2){
+    width = 36;
+    height = 63;
+  }
+  else{
+    width = 32;
+    height = 56;
+  }
+	srand((unsigned int)time(NULL));
+
+  preyX = rand() % height;
+  preyY = rand() % width;
+
+	while(map[preyX][preyY] != 0){
+		preyX = rand() % height;
+		preyY = rand() % width;
+	}
+	map[preyX][preyY] = 5;
+  printf("X: %d", preyX);
+  printf( "Y %d"  ,preyY);
+	mvprintw(preyX, preyY, "*");
+}
+
+// 독 생성 위치를 mapx의 값이 0인 곳 중 랜덤으로 지정
+void poisonItem(){
+  mvprintw(poisonX, poisonY, " ");
+  if(!checkPoison){
+    map[poisonX][poisonY] = 0;
+  }
+    if(stage == 1){
+      width = 70;
+      height = 40;
+    }
+    else if(stage == 2){
+      width = 36;
+      height = 63;
+    }
+    else{
+      width = 32;
+      height = 56;
+    }
+	srand((unsigned int)time(NULL));
+
+  poisonX = rand() % height;
+  poisonY = rand() % width;
+
+	while(map[poisonX][poisonY] != 0){
+		poisonX = rand() % height;
+		poisonY = rand() % width;
+	}
+	map[poisonX][poisonY] = 6;
+	mvprintw(poisonX, poisonY, "x");
+}
+
 void gate(int stage) {
 	int counter = 0;
 	srand((unsigned)time(NULL));
@@ -323,159 +504,6 @@ void gate(int stage) {
 		}
 	}
 }
-// snake 좌표 이동
-void move(int direction) {
-	inputKey = wgetch(stdscr);
-	// 그 전 방향에 따라  제약조건 추가
-	if (inputKey == KEY_UP && currentHead != 1) {
-		currentHead = 0;
-	}
-	else if (inputKey == KEY_DOWN && currentHead != 0) {
-		currentHead = 1;
-	}
-	else if (inputKey == KEY_LEFT && currentHead != 3) {
-		currentHead = 2;
-	}
-	else if (inputKey == KEY_RIGHT && currentHead != 2) {
-		currentHead = 3;
-	}
-	for (int i = 0; i < xPos.size(); i++) {  // 이전의 snake를 지움
-		map[xPos[i]][yPos[i]] = 0;
-	}
-
-	for (int i = xPos.size(); i > 0; i--) {  // head를 제외한 body를 한 칸씩 옮김
-		xPos[i] = xPos[i - 1];
-		yPos[i] = yPos[i - 1];
-	}
-
-	xPos[0] = xPos[0] + headDirection[direction][0]; // 방향키에 따라 head의 좌표 재설정
-	yPos[0] = yPos[0] + headDirection[direction][1];
-
-
-	if (!checkPrey) growthItem();
-
-	// 먹이를 먹은 경우
-	if ((xPos[0] == preyX) && (yPos[0] == preyY)) {
-		// 몸의 길이가 진행방향으로 증가
-		xPos.insert(xPos.begin(), preyX);
-		yPos.insert(yPos.begin(), preyY);
-		checkPrey = true;
-	}
-	else {
-		mvprintw(preyX, preyY, " ");
-		checkPrey = false;
-	}
-	printf("%d", checkPrey);
-	for (int i = 0; i < xPos.size(); i++) {  // map에 snake값 할당
-		if (i == 0) {
-			map[xPos[i]][yPos[i]] = 3;
-		}
-		else {
-			map[xPos[i]][yPos[i]] = 4;
-		}
-	}
-	/*
-	for (int i = 0; i < xPos.size(); i++) {  // map에 snake값 할당
-		if (i == 0) {
-			if (xPos[i] == gateOneX && yPos[i] == gateOneY) {
-				xPos[i] = gateTwoX;
-				yPos[i] = gateTwoY;
-				map[xPos[i]][yPos[i]] = 3;
-			}
-			else if (xPos[i] == gateTwoX && yPos[i] == gateTwoY) {
-				xPos[i] = gateOneX;
-				yPos[i] = gateOneY;
-				map[xPos[i]][yPos[i]] = 3;
-			}
-		}
-		else {
-			if (xPos[i] == gateOneX && yPos[i] == gateOneY) {
-				xPos[i] = gateTwoY;
-				yPos[i] = gateTwoX;
-				map[xPos[i]][yPos[i]] = 4;
-			}
-			else if (xPos[i] == gateTwoX && yPos[i] == gateTwoY) {
-				xPos[i] = gateOneY;
-				yPos[i] = gateOneX;
-				map[xPos[i]][yPos[i]] = 4;
-			}
-		}
-	}
-	*/
-
-
-	// 몸의 길이가 3보다 작아진 경우 -> game over
-	if (xPos.size() < 3) checkFail = true;
-
-	//벽과 출돌한 경우 -> game over 완성
-	if (xPos[0] == 0 || xPos[0] == 39) {
-		if (xPos[0] == gateOneY && yPos[0] == gateOneX) {
-		}
-		else if (xPos[0] == gateTwoY && yPos[0] == gateTwoX) {
-		}
-		else {
-			checkFail = true;
-		}
-		
-	}
-	else if (yPos[0] == 0 || yPos[0] == 69) {
-		if (xPos[0] == gateOneY && yPos[0] == gateOneX) {
-		}
-		else if (xPos[0] == gateTwoY && yPos[0] == gateTwoX) {
-		}
-		else {
-			checkFail = true;
-		}
-	}
-
-	// Tail방향으로 움직인 경우 -> game over
-	if ((inputKey == KEY_UP && currentHead == 1) || (inputKey == KEY_DOWN && currentHead == 0)
-		|| (inputKey == KEY_LEFT && currentHead == 3) || (inputKey == KEY_RIGHT && currentHead == 2))
-		checkFail = true;
-
-	if (checkFail) {
-		mvprintw(16, 30, "z");
-		return;
-	}
-
-
-}
-
-// 먹이 생성 위치를 map의 값이 0인 곳 중 랜덤으로 지정
-void growthItem() {
-	int width = sizeof(map[0]) / sizeof(int);
-	int height = (sizeof(map) / width) / sizeof(int);
-	srand((unsigned int)time(NULL));
-
-	preyX = (rand() % height - 1) + 1;
-	preyY = (rand() % width - 1) + 1;
-
-	while (map[preyX][preyY] != 0) {
-		preyX = (rand() % height - 1) + 1;
-		preyY = (rand() % width - 1) + 1;
-	}
-	map[preyX][preyY] = 5;
-
-}
-
-// 독 생성 위치를 map의 값이 0인 곳 중 랜덤으로 지정
-void poisonItem() {
-	int width = sizeof(map[0]) / sizeof(int);
-	int height = (sizeof(map) / width) / sizeof(int);
-	srand((unsigned int)time(NULL));
-
-	poisonX = (rand() % height - 1) + 1;
-	poisonY = (rand() % width - 1) + 1;
-
-	while (map[poisonX][poisonY] != 0) {
-		poisonX = (rand() % height - 1) + 1;
-		poisonY = (rand() % width - 1) + 1;
-	}
-	map[poisonX][poisonY] = 6;
-
-}
-
-
 //mission창 score창 프린트
 void mission_score() {
 	WINDOW* score;
@@ -498,14 +526,13 @@ void mission_score() {
 	wrefresh(score);
 }
 
+
 int main() {
   setlocale(LC_ALL, "");
 	initscr();
 	resize_term(45, 110);
 	noecho();
 	refresh();
-
-	//initscr();
 	nodelay(stdscr, TRUE);
 	keypad(stdscr, TRUE);  // 키보드 입력 설정
 	curs_set(0);  // 커서 지우기
@@ -519,20 +546,18 @@ int main() {
 	yPos.push_back(57);
 	map[10][55] = 3;
 	map[10][56] = 4;
-	map[10][57] = 4;		
-	
-	while (true) {
-		move(currentHead);
-		//백번마다 G위치 바꾸기
-		if (run % 100 == 1) {
-			gate(1);
-		}
-		drawmap(1);
-  		mission_score();
-    if(checkFail) break;
-		usleep(100000);  // 0.1초마다
-		run++;
+	map[10][57] = 4;
+
+	// 초기 snake 화면에 출력
+	for (int i = 0; i < xPos.size(); i++) {
+		if (i == 0) mvprintw(xPos[i], yPos[i], "O");
+		else mvprintw(xPos[i], yPos[i], "o");
 	}
+  //gmap(1,run);
+  thread tStart(startGame);
+  thread tSet(setItem);
+  tStart.join();
+  tSet.join();
 
 	refresh();
 	getch();
