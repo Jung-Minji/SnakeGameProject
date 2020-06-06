@@ -8,25 +8,325 @@
 #include <ncurses.h>
 using namespace std;
 
+
 int map[40][70] = { 0, };
 int stage = 1;
-int run=0;
+int gateOneY, gateOneX, gateTwoY, gateTwoX; //gate ì¢Œí‘œ
+int run = 0;
 WINDOW* screen;
 int inputKey;
-int currentHead = 2;  // ÃÊ±â snakeÀÇ ¹æÇâ : ¿ŞÂÊ
+int currentHead = 2;  // ì´ˆê¸° snakeì˜ ë°©í–¥ : ì™¼ìª½
+bool checkFail = false;
+bool checkPrey = false;
+bool checkPoison = false;
+int preyX, preyY, poisonX, poisonY;
 
 int headDirection[4][2] = {
   {-1, 0}, {1, 0}, {0, -1}, {0, 1}
-};  // snake head°¡ ¿òÁ÷ÀÌ´Â ¹æÇâ; À§, ¾Æ·¡, ¿Ş, ¿À
+};  // snake headê°€ ì›€ì§ì´ëŠ” ë°©í–¥; ìœ„, ì•„ë˜, ì™¼, ì˜¤
 
+vector <int> xPos;  // snakeì˜ xì¢Œí‘œê°€ ìˆëŠ” ë²¡í„°
+vector <int> yPos;  // snakeì˜ yì¢Œí‘œê°€ ìˆëŠ” ë²¡í„°
 
-vector <int> xPos;  // snakeÀÇ xÁÂÇ¥°¡ ÀÖ´Â º¤ÅÍ
-vector <int> yPos;  // snakeÀÇ yÁÂÇ¥°¡ ÀÖ´Â º¤ÅÍ
+bool gameOver();
+void growthItem();
 
-// snake ÁÂÇ¥ ÀÌµ¿
+//stageë³„ ë§µ êµ¬í˜„
+void drawmap(int stage) {
+	if (stage == 1) {
+		wclear(screen);
+		screen = newwin(40, 70, 2, 2);
+		//ë°°ì—´ì˜ ê°’ì„ ì´ìš©í•´ì„œ mapì„ ê·¸ë¦¬ëŠ” ì‹
+		for (int y = 0; y < 40; y++) {
+			for (int x = 0; x < 70; x++) {
+				if (map[y][x] == 2) {
+					wmove(screen, y, x);
+					waddch(screen, '+');
+				}
+				else if (map[y][x] == 1) {
+					if (x == 0 || x == 69) {
+						wmove(screen, y, x);
+						waddch(screen, '|');
+					}
+					else if (y == 0 || y == 39) {
+						wmove(screen, y, x);
+						waddch(screen, '-');
+					}
+				}
+				//gate ê·¸ë¦¬ê¸°
+				else if (map[y][x] == 7 || map[y][x] == 8) {
+					wmove(screen, y, x);
+					waddch(screen, 'G');
+				}
+				else if (map[y][x] == 3) {
+					wmove(screen, y, x);
+					waddch(screen, 'O');
+				}
+				else if (map[y][x] == 4) {
+					wmove(screen, y, x);
+					waddch(screen, 'o');
+				}
+				
+			}
+		}
+
+		wrefresh(screen);
+	}
+	/*
+	else if (stage == 2) {
+		wclear(screen);
+		screen = newwin(36, 63, 5, 5);
+		for (int y = 0; y < 36; y++) {
+			for (int x = 0; x < 63; x++) {
+				if (map2[y][x] == 2) {
+					wmove(screen, y, x);
+					waddch(screen, '+');
+				}
+				else if (map2[y][x] == 1) {
+					if (x == 0 || x == 62) {
+						wmove(screen, y, x);
+						waddch(screen, '|');
+					}
+					else if (y == 0 || y == 35) {
+						wmove(screen, y, x);
+						waddch(screen, '-');
+					}
+
+				}
+				//gate ê·¸ë¦¬ê¸°
+				else if (map2[y][x] == 7 || map2[y][x] == 8) {
+					wmove(screen, y, x);
+					waddch(screen, 'G');
+				}
+			}
+		}
+
+		wrefresh(screen);
+	}
+	else if (stage == 3) {
+		wclear(screen);
+
+		screen = newwin(32, 56, 7, 7);
+		for (int y = 0; y < 32; y++) {
+			for (int x = 0; x < 56; x++) {
+				if (map[y][x] == 2) {
+					wmove(screen, y, x);
+					waddch(screen, '+');
+				}
+				else if (map[y][x] == 1) {
+					if (x == 0 || x == 55) {
+						wmove(screen, y, x);
+						waddch(screen, '|');
+					}
+					else if (y == 0 || y == 31) {
+						wmove(screen, y, x);
+						waddch(screen, '-');
+					}
+
+				}
+				//gate ê·¸ë¦¬ê¸°
+				else if (map[y][x] == 7 || map[y][x] == 8) {
+					wmove(screen, y, x);
+					waddch(screen, 'G');
+				}
+			}
+		}
+
+		wrefresh(screen);
+	}
+	else if (stage == 4) {
+		;
+		wclear(screen);
+		int map[32][56] = { 0, };
+		screen = newwin(32, 56, 7, 7);
+
+		for (int y = 0; y < 32; y++) {
+			for (int x = 0; x < 56; x++) {
+				if (map[y][x] == 2) {
+					wmove(screen, y, x);
+					waddch(screen, '+');
+				}
+				else if (map[y][x] == 1) {
+					if (x == 0 || x == 55) {
+						wmove(screen, y, x);
+						waddch(screen, '|');
+					}
+					else if (y == 0 || y == 31) {
+						wmove(screen, y, x);
+						waddch(screen, '-');
+					}
+
+				}
+				//gate ê·¸ë¦¬ê¸°
+				else if (map[y][x] == 7 || map[y][x] == 8) {
+					wmove(screen, y, x);
+					waddch(screen, 'G');
+				}
+			}
+		}
+		wrefresh(screen);
+	}*/
+}
+void gate(int stage) {
+	int counter = 0;
+	srand((unsigned)time(NULL));
+	if (stage == 1) {
+		for (int y = 0; y < 40; y++) {
+			for (int x = 0; x < 70; x++) {
+				if (y == 0 && (x == 0 || x == 69) || (y == 39 && (x == 0 || x == 69))) {
+					map[y][x] = 2;
+
+				}
+				else if (x == 0 || x == 69) {
+					if (map[y][x] != 7 || map[y][x] != 8) {
+						map[y][x] = 1;
+					}
+
+				}
+				else if (y == 0 || y == 39) {
+					if (map[y][x] != 7 || map[y][x] != 8) {
+						map[y][x] = 1;
+					}
+				}
+			}
+		}
+		while (counter < 2) {
+			int g1 = rand() % 40;
+			int g2 = rand() % 70;
+			if (map[g1][g2] == 1) {
+				if (counter == 0) {
+					map[g1][g2] = 7;
+					gateOneY = g1;
+					gateOneX = g2;
+				}
+				else {
+					map[g1][g2] = 8;
+					gateTwoY = g1;
+					gateTwoX = g2;
+				}
+				counter++;
+			}
+		}
+	}
+	else if (stage == 2) {
+		for (int y = 0; y < 36; y++) {
+			for (int x = 0; x < 63; x++) {
+				if (y == 0 && (x == 0 || x == 62) || (y == 35 && (x == 0 || x == 62))) {
+					map2[y][x] = 2;
+
+				}
+				else if (x == 0 || x == 62) {
+					if (map2[y][x] != 7 || map2[y][x] != 8) {
+						map2[y][x] = 1;
+					}
+
+				}
+				else if (y == 0 || y == 35) {
+					if (map2[y][x] != 7 || map2[y][x] != 8) {
+						map2[y][x] = 1;
+					}
+				}
+			}
+		}
+		while (counter < 2) {
+			int g1 = rand() % 36;
+			int g2 = rand() % 63;
+			if (map2[g1][g2] == 1) {
+				if (counter == 0) {
+					map2[g1][g2] = 7;
+					gateOneY = g1;
+					gateOneX = g2;
+				}
+				else {
+					map2[g1][g2] = 8;
+					gateTwoY = g1;
+					gateTwoX = g2;
+				}
+				counter++;
+			}
+		}
+	}
+	else if (stage == 3) {
+		for (int y = 0; y < 32; y++) {
+			for (int x = 0; x < 56; x++) {
+				if (y == 0 && (x == 0 || x == 55) || (y == 31 && (x == 0 || x == 55))) {
+					map[y][x] = 2;
+
+				}
+				else if (x == 0 || x == 55) {
+					if (map[y][x] != 7 || map[y][x] != 8) {
+						map[y][x] = 1;
+					}
+
+				}
+				else if (y == 0 || y == 31) {
+					if (map[y][x] != 7 || map[y][x] != 8) {
+						map[y][x] = 1;
+					}
+				}
+			}
+		}
+		while (counter < 2) {
+			int g1 = rand() % 32;
+			int g2 = rand() % 56;
+			if (map[g1][g2] == 1) {
+				if (counter == 0) {
+					map[g1][g2] = 7;
+					gateOneY = g1;
+					gateOneX = g2;
+				}
+				else {
+					map[g1][g2] = 8;
+					gateTwoY = g1;
+					gateTwoX = g2;
+				}
+				counter++;
+			}
+		}
+	}
+	else if (stage == 4) {
+		for (int y = 0; y < 32; y++) {
+			for (int x = 0; x < 56; x++) {
+				if (y == 0 && (x == 0 || x == 55) || (y == 31 && (x == 0 || x == 55))) {
+					map[y][x] = 2;
+
+				}
+				else if (x == 0 || x == 55) {
+					if (map[y][x] != 7 || map[y][x] != 8) {
+						map[y][x] = 1;
+					}
+
+				}
+				else if (y == 0 || y == 31) {
+					if (map[y][x] != 7 || map[y][x] != 8) {
+						map[y][x] = 1;
+					}
+				}
+			}
+		}
+		while (counter < 2) {
+			int g1 = rand() % 32;
+			int g2 = rand() % 56;
+			if (map[g1][g2] == 1) {
+				if (counter == 0) {
+					map[g1][g2] = 7;
+					gateOneY = g1;
+					gateOneX = g2;
+				}
+				else {
+					map[g1][g2] = 8;
+					gateTwoY = g1;
+					gateTwoX = g2;
+				}
+				counter++;
+			}
+		}
+	}
+}
+// snake ì¢Œí‘œ ì´ë™
 void move(int direction) {
 	inputKey = wgetch(stdscr);
-	// ±× Àü ¹æÇâ¿¡ µû¶ó  Á¦¾àÁ¶°Ç Ãß°¡
+	// ê·¸ ì „ ë°©í–¥ì— ë”°ë¼  ì œì•½ì¡°ê±´ ì¶”ê°€
 	if (inputKey == KEY_UP && currentHead != 1) {
 		currentHead = 0;
 	}
@@ -39,167 +339,144 @@ void move(int direction) {
 	else if (inputKey == KEY_RIGHT && currentHead != 2) {
 		currentHead = 3;
 	}
-	for (int i = 0; i < xPos.size(); i++) {  // ÀÌÀüÀÇ snake¸¦ Áö¿ò
-		mvprintw(xPos[i], yPos[i], " ");
+	for (int i = 0; i < xPos.size(); i++) {  // ì´ì „ì˜ snakeë¥¼ ì§€ì›€
+		map[xPos[i]][yPos[i]] = 0;
 	}
 
-	for (int i = xPos.size(); i > 0; i--) {  // head¸¦ Á¦¿ÜÇÑ body¸¦ ÇÑ Ä­¾¿ ¿Å±è
+	for (int i = xPos.size(); i > 0; i--) {  // headë¥¼ ì œì™¸í•œ bodyë¥¼ í•œ ì¹¸ì”© ì˜®ê¹€
 		xPos[i] = xPos[i - 1];
 		yPos[i] = yPos[i - 1];
-		
 	}
-	xPos[0] = xPos[0] + headDirection[direction][0]; // ¹æÇâÅ°¿¡ µû¶ó headÀÇ ÁÂÇ¥ Àç¼³Á¤
+
+	xPos[0] = xPos[0] + headDirection[direction][0]; // ë°©í–¥í‚¤ì— ë”°ë¼ headì˜ ì¢Œí‘œ ì¬ì„¤ì •
 	yPos[0] = yPos[0] + headDirection[direction][1];
 
-	for (int i = 0; i < xPos.size(); i++) {  // È­¸é»ó¿¡ Ãâ·Â
-		if (i == 0) mvprintw(xPos[i], yPos[i], "O");
-		else mvprintw(xPos[i], yPos[i], "o");
+
+	if (!checkPrey) growthItem();
+
+	// ë¨¹ì´ë¥¼ ë¨¹ì€ ê²½ìš°
+	if ((xPos[0] == preyX) && (yPos[0] == preyY)) {
+		// ëª¸ì˜ ê¸¸ì´ê°€ ì§„í–‰ë°©í–¥ìœ¼ë¡œ ì¦ê°€
+		xPos.insert(xPos.begin(), preyX);
+		yPos.insert(yPos.begin(), preyY);
+		checkPrey = true;
 	}
+	else {
+		mvprintw(preyX, preyY, " ");
+		checkPrey = false;
+	}
+	printf("%d", checkPrey);
+	for (int i = 0; i < xPos.size(); i++) {  // mapì— snakeê°’ í• ë‹¹
+		if (i == 0) {
+			map[xPos[i]][yPos[i]] = 3;
+		}
+		else {
+			map[xPos[i]][yPos[i]] = 4;
+		}
+	}
+	/*
+	for (int i = 0; i < xPos.size(); i++) {  // mapì— snakeê°’ í• ë‹¹
+		if (i == 0) {
+			if (xPos[i] == gateOneX && yPos[i] == gateOneY) {
+				xPos[i] = gateTwoX;
+				yPos[i] = gateTwoY;
+				map[xPos[i]][yPos[i]] = 3;
+			}
+			else if (xPos[i] == gateTwoX && yPos[i] == gateTwoY) {
+				xPos[i] = gateOneX;
+				yPos[i] = gateOneY;
+				map[xPos[i]][yPos[i]] = 3;
+			}
+		}
+		else {
+			if (xPos[i] == gateOneX && yPos[i] == gateOneY) {
+				xPos[i] = gateTwoY;
+				yPos[i] = gateTwoX;
+				map[xPos[i]][yPos[i]] = 4;
+			}
+			else if (xPos[i] == gateTwoX && yPos[i] == gateTwoY) {
+				xPos[i] = gateOneY;
+				yPos[i] = gateOneX;
+				map[xPos[i]][yPos[i]] = 4;
+			}
+		}
+	}
+	*/
+
+
+	// ëª¸ì˜ ê¸¸ì´ê°€ 3ë³´ë‹¤ ì‘ì•„ì§„ ê²½ìš° -> game over
+	if (xPos.size() < 3) checkFail = true;
+
+	//ë²½ê³¼ ì¶œëŒí•œ ê²½ìš° -> game over ì™„ì„±
+	if (xPos[0] == 0 || xPos[0] == 39) {
+		if (xPos[0] == gateOneY && yPos[0] == gateOneX) {
+		}
+		else if (xPos[0] == gateTwoY && yPos[0] == gateTwoX) {
+		}
+		else {
+			checkFail = true;
+		}
+		
+	}
+	else if (yPos[0] == 0 || yPos[0] == 69) {
+		if (xPos[0] == gateOneY && yPos[0] == gateOneX) {
+		}
+		else if (xPos[0] == gateTwoY && yPos[0] == gateTwoX) {
+		}
+		else {
+			checkFail = true;
+		}
+	}
+
+	// Tailë°©í–¥ìœ¼ë¡œ ì›€ì§ì¸ ê²½ìš° -> game over
+	if ((inputKey == KEY_UP && currentHead == 1) || (inputKey == KEY_DOWN && currentHead == 0)
+		|| (inputKey == KEY_LEFT && currentHead == 3) || (inputKey == KEY_RIGHT && currentHead == 2))
+		checkFail = true;
+
+	if (checkFail) {
+		mvprintw(16, 30, "z");
+		return;
+	}
+
+
 }
 
-
-//stageº° ¸Ê ±¸Çö
-void gmap(int stage,int runtime) {
+// ë¨¹ì´ ìƒì„± ìœ„ì¹˜ë¥¼ mapì˜ ê°’ì´ 0ì¸ ê³³ ì¤‘ ëœë¤ìœ¼ë¡œ ì§€ì •
+void growthItem() {
+	int width = sizeof(map[0]) / sizeof(int);
+	int height = (sizeof(map) / width) / sizeof(int);
 	srand((unsigned int)time(NULL));
-	int maxX, maxY;
-	if (stage == 1) {
-		int counter = 0;
-		wclear(screen);
-		screen = newwin(40, 70, 2, 2);
-		getmaxyx(stdscr, maxY, maxX);
-		for (int y = 0; y < 40; y++) {
-			for (int x = 0; x < 70; x++) {
-				if (y == 0 && (x == 0 || x == 69) || (y == 39 && (x == 0 || x == 69))) {
-					map[y][x] = 2;
-					wmove(screen, y, x);
-					waddch(screen, '+');
-				}
-				else if (x == 0 || x == 69) {
-					map[y][x] = 1;
-					wmove(screen, y, x);
-					waddch(screen, '|');
-				}
-				else if (y == 0 || y == 39) {
-					map[y][x] = 1;
-					wmove(screen, y, x);
-					waddch(screen, '-');
-				}
-			}
-		}
-		wrefresh(screen);
-	}
-	else if(stage == 2) {
-		int counter = 0;
-		wclear(screen);
-		int map[36][63] = { 0, };
-		screen = newwin(36, 63, 5,5);
-		getmaxyx(stdscr, maxY, maxX);
-		for (int y = 0; y < 36; y++) {
-			for (int x = 0; x < 63; x++) {
-				if (y == 0 && (x == 0 || x == 63) || (y == 35 && (x == 0 || x == 63))) {
-					map[y][x] = 2;
-					wmove(screen, y, x);
-					waddch(screen, '+');
-				}
-				else if (x == 0 || x == 63) {
-					map[y][x] = 1;
-					wmove(screen, y, x);
-					waddch(screen, '|');
-				}
-				else if (y == 0 || y == 35) {
-					map[y][x] = 1;
-					wmove(screen, y, x);
-					waddch(screen, '-');
-				}
-			}
-		}
-		
-		wrefresh(screen);
-	}
-	else if (stage == 3) {
-		int counter = 0;
-		wclear(screen);
-		int map[32][56] = { 0, };
-		screen = newwin(32, 56, 7, 7);
-		getmaxyx(stdscr, maxY, maxX);
-		for (int y = 0; y < 32; y++) {
-			for (int x = 0; x < 56; x++) {
-				if (y == 0 && (x == 0 || x == 55) || (y == 31 && (x == 0 || x == 55))) {
-					map[y][x] = 2;
-					wmove(screen, y, x);
-					waddch(screen, '+');
-				}
-				else if (x == 0 || x == 55) {
-					map[y][x] = 1;
-					wmove(screen, y, x);
-					waddch(screen, '|');
-				}
-				else if (y == 0 || y == 31) {
-					map[y][x] = 1;
-					wmove(screen, y, x);
-					waddch(screen, '-');
-				}
-			}
-		}
-		
-		wrefresh(screen);
-	}
-	else if (stage == 4) {
-		int gp1, gp2;
-		int gp3, gp4;
-		int counter = 0;
-		int test = 0;
-		wclear(screen);
-		int map[32][56] = { 0, };
 
-		screen = newwin(32, 56, 7, 7);
-		getmaxyx(stdscr, maxY, maxX);
-		for (int y = 0; y < 32; y++) {
-			for (int x = 0; x < 56; x++) {
-				if (y == 0 && (x == 0 || x == 55) || (y == 31 && (x == 0 || x == 55))) {
-					map[y][x] = 2;
-					wmove(screen, y, x);
-					waddch(screen, '+');
-				}
-				else if (x == 0 || x == 55) {
-					map[y][x] = 1;
-					wmove(screen, y, x);
-					waddch(screen, '|');
-				}
-				else if (y == 0 || y == 31) {
-					map[y][x] = 1;
-					wmove(screen, y, x);
-					waddch(screen, '-');
-				}
-			}
-		}
-		/*if (runtime % 30 == 1) {
-			while (counter < 2) {
-				int g1 = rand() % 32;
-				int g2 = rand() % 56;
-				if (map[g1][g2] == 1) {
-					if (counter == 0) {
-						map[g1][g2] = 7;
-						wmove(screen, g1, g2);
-						waddch(screen, 'G');
-					}
-					else {
-						map[g1][g2] = 8;
-						wmove(screen, g1, g2);
-						waddch(screen, 'G');
-					}
-					counter++;
-				}
-			}
-		}*/
-		wrefresh(screen);
+	preyX = (rand() % height - 1) + 1;
+	preyY = (rand() % width - 1) + 1;
+
+	while (map[preyX][preyY] != 0) {
+		preyX = (rand() % height - 1) + 1;
+		preyY = (rand() % width - 1) + 1;
 	}
+	map[preyX][preyY] = 5;
 
 }
-void gate(int runtime) {
-	
+
+// ë… ìƒì„± ìœ„ì¹˜ë¥¼ mapì˜ ê°’ì´ 0ì¸ ê³³ ì¤‘ ëœë¤ìœ¼ë¡œ ì§€ì •
+void poisonItem() {
+	int width = sizeof(map[0]) / sizeof(int);
+	int height = (sizeof(map) / width) / sizeof(int);
+	srand((unsigned int)time(NULL));
+
+	poisonX = (rand() % height - 1) + 1;
+	poisonY = (rand() % width - 1) + 1;
+
+	while (map[poisonX][poisonY] != 0) {
+		poisonX = (rand() % height - 1) + 1;
+		poisonY = (rand() % width - 1) + 1;
+	}
+	map[poisonX][poisonY] = 6;
+
 }
-//missionÃ¢ scoreÃ¢ ÇÁ¸°Æ®
+
+
+//missionì°½ scoreì°½ í”„ë¦°íŠ¸
 void mission_score() {
 	WINDOW* score;
 	WINDOW* mission;
@@ -220,37 +497,40 @@ void mission_score() {
 	mvwprintw(score, 14, 2, "G:");
 	wrefresh(score);
 }
-	
-int main() {
 
-	initscr(); 
+int main() {
+  setlocale(LC_ALL, "");
+	initscr();
 	resize_term(45, 110);
 	noecho();
-	border('o', 'o', 'o', 'o', 'o', 'o', 'o', 'o');
-	refresh();	
-	setlocale(LC_ALL, "");
-	initscr();
-	nodelay(stdscr, TRUE);
-	keypad(stdscr, TRUE);  // Å°º¸µå ÀÔ·Â ¼³Á¤
-	curs_set(0);  // Ä¿¼­ Áö¿ì±â
-	noecho();  // ÀÔ·ÂÇÑ Å° °ªÀ» È­¸é¿¡ º¸ÀÌÁö ¾Ê±â
+	refresh();
 
-	xPos.push_back(10);  // ÃÊ±â snakeÀÇ À§Ä¡ ÁöÁ¤
+	//initscr();
+	nodelay(stdscr, TRUE);
+	keypad(stdscr, TRUE);  // í‚¤ë³´ë“œ ì…ë ¥ ì„¤ì •
+	curs_set(0);  // ì»¤ì„œ ì§€ìš°ê¸°
+	noecho();  // ì…ë ¥í•œ í‚¤ ê°’ì„ í™”ë©´ì— ë³´ì´ì§€ ì•Šê¸°
+
+	xPos.push_back(10);  // ì´ˆê¸° snakeì˜ ìœ„ì¹˜ ì§€ì •
 	xPos.push_back(10);
 	xPos.push_back(10);
 	yPos.push_back(55);
 	yPos.push_back(56);
 	yPos.push_back(57);
-	// ÃÊ±âÈ­¸é snake Ãâ·Â
-	for (int i = 0; i < xPos.size(); i++) {
-		if (i == 0) mvprintw(xPos[i], yPos[i], "O");
-		else mvprintw(xPos[i], yPos[i], "o");
-	}
-	while (true) {		
-		gmap(4,run);
-		mission_score();
+	map[10][55] = 3;
+	map[10][56] = 4;
+	map[10][57] = 4;		
+	
+	while (true) {
 		move(currentHead);
-		usleep(100000);  // 0.5ÃÊ¸¶´Ù
+		//ë°±ë²ˆë§ˆë‹¤ Gìœ„ì¹˜ ë°”ê¾¸ê¸°
+		if (run % 100 == 1) {
+			gate(1);
+		}
+		drawmap(1);
+  		mission_score();
+    if(checkFail) break;
+		usleep(100000);  // 0.1ì´ˆë§ˆë‹¤
 		run++;
 	}
 
