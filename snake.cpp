@@ -8,7 +8,7 @@
 #include <ncurses.h>
 #include <thread>
 using namespace std;
-using namespace std::chrono;
+
 
 int map[40][70] = { 0, };
 int map2[40][70] = {0, };
@@ -76,7 +76,14 @@ void drawmap(int stage) {
 					wmove(screen, y, x);
 					waddch(screen, 'o');
 				}
-
+				else if (map[y][x] == 5) {
+					wmove(screen, y, x);
+					waddch(screen, '*');
+				}
+				else if (map[y][x] == 6) {
+					wmove(screen, y, x);
+					waddch(screen, 'x');
+				}
 			}
 		}
 
@@ -268,10 +275,7 @@ void moveSnake(int direction) {
   }
 
 
-  for (int i = 0; i < xPos.size(); i++) {  // 화면상에 snake출력
-    if (i == 0) mvprintw(xPos[i], yPos[i], "O");
-    else mvprintw(xPos[i], yPos[i], "o");
-  }
+
 }
 
 void setItem(){
@@ -312,9 +316,7 @@ void growthItem(){
 		preyY = rand() % width;
 	}
 	map[preyX][preyY] = 5;
-  printf("X: %d", preyX);
-  printf( "Y %d"  ,preyY);
-	mvprintw(preyX, preyY, "*");
+	
 }
 
 // 독 생성 위치를 mapx의 값이 0인 곳 중 랜덤으로 지정
@@ -345,7 +347,7 @@ void poisonItem(){
 		poisonY = rand() % width;
 	}
 	map[poisonX][poisonY] = 6;
-	mvprintw(poisonX, poisonY, "x");
+	
 }
 
 void gate(int stage) {
@@ -393,18 +395,18 @@ void gate(int stage) {
 		for (int y = 0; y < 36; y++) {
 			for (int x = 0; x < 63; x++) {
 				if (y == 0 && (x == 0 || x == 62) || (y == 35 && (x == 0 || x == 62))) {
-					map2[y][x] = 2;
+					map[y][x] = 2;
 
 				}
 				else if (x == 0 || x == 62) {
-					if (map2[y][x] != 7 || map2[y][x] != 8) {
-						map2[y][x] = 1;
+					if (map[y][x] != 7 || map[y][x] != 8) {
+						map[y][x] = 1;
 					}
 
 				}
 				else if (y == 0 || y == 35) {
-					if (map2[y][x] != 7 || map2[y][x] != 8) {
-						map2[y][x] = 1;
+					if (map[y][x] != 7 || map[y][x] != 8) {
+						map[y][x] = 1;
 					}
 				}
 			}
@@ -412,14 +414,14 @@ void gate(int stage) {
 		while (counter < 2) {
 			int g1 = rand() % 36;
 			int g2 = rand() % 63;
-			if (map2[g1][g2] == 1) {
+			if (map[g1][g2] == 1) {
 				if (counter == 0) {
-					map2[g1][g2] = 7;
+					map[g1][g2] = 7;
 					gateOneY = g1;
 					gateOneX = g2;
 				}
 				else {
-					map2[g1][g2] = 8;
+					map[g1][g2] = 8;
 					gateTwoY = g1;
 					gateTwoX = g2;
 				}
