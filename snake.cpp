@@ -127,7 +127,7 @@ void moveSnake(int direction) {
     checkPoison = false;
   }
 
-  //gate 이동
+  //gate 위치에 따른 진행방향 수정 : 권순민
   if (stage == 1) {
 	  mSizeY = 30;
 	  mSizeX = 50;
@@ -291,7 +291,7 @@ void poisonItem(){
 	
 }
 
-//stage별 맵 구현
+//stage별 맵 구현 : 권순민
 void drawmap(int stage) {
 	if (stage == 1) {
 		screen = newwin(30, 50, 7, 7);
@@ -477,7 +477,7 @@ void drawmap(int stage) {
 		wrefresh(screen);
 	}
 }
-
+//맵을 그리기 전에 gate와 경계면 값 할당 :권순민
 void gate(int stage) {
 	int counter = 0;
 	srand((unsigned)time(NULL));
@@ -637,7 +637,7 @@ void gate(int stage) {
 	}
 }
 
-//mission창 score창 프린트
+//mission창 score창 프린트 : 권순민
 void mission_score() {
 	if (stage == 1) {
 		mission_B = 5;
@@ -765,7 +765,7 @@ void initialize() {
 	map[height / 2 ][width / 2 ] = 4;
 	map[height/2][width / 2] = 4;
 }
-//다음 단계 넘어갈때 문구
+//다음 단계 넘어갈때 문구 : 권순민
 void nextStage(int stage) {
 	if (stage == 2) {
 		clear();
@@ -811,7 +811,7 @@ void nextStage(int stage) {
 		clear();
 	}
 }
-//시작화면
+//시작화면 : 권순민
 void title() {
 	mvprintw(20, 47, "------------------");
 	mvprintw(21, 47, "|                |");
@@ -831,6 +831,7 @@ void title() {
 	refresh();
 	sleep(5);
 }
+// game over화면 출력 : 권순민
 void over() {
 	clear();
 	mvprintw(20, 47, "-----------------");
