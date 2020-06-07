@@ -658,10 +658,10 @@ void mission_score() {
 		mission_P = 7;
 	}
 	else if (stage == 4) {
-		mission_B = 1;
-		mission_F = 1;
-		mission_G = 1;
-		mission_P = 1;
+		mission_B = 14;
+		mission_F = 20;
+		mission_G = 5;
+		mission_P = 7;
 	}
 	if (mission_B <=  (3 + countPrey - countPoison) % (3 + countPrey) && mission_B != 0) {
 		checkB[0] = '(';
