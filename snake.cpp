@@ -20,7 +20,7 @@ int preyX = 1, preyY = 1, poisonX = 1, poisonY = 1;
 int countPrey = 0, countPoison = 0;
 int gateOneY, gateOneX, gateTwoY, gateTwoX; //gate 좌표
 int mSizeX, mSizeY;
-int countGate;								
+int countGate;
 int mission_B, mission_G, mission_P, mission_F;
 char checkB[4], checkG[4], checkP[4], checkF[4];
 bool checkMission1, checkMission2, checkMission3, checkMission4;
@@ -42,7 +42,9 @@ void mission_score();
 void initialize();
 void nextStage(int);
 void over();
+void drawmap(int);
 
+// 전체 게임 로직 돌리기 : 정민지(20191662)
 void startGame(){
   while (true && stage !=5) {
 	  currentstage = stage;
@@ -54,7 +56,7 @@ void startGame(){
 	mission_score();
     drawmap(stage);
 	if (currentstage != stage) {
-		if (stage == 5) {			
+		if (stage == 5) {
 			break;
 		}
 		else {
@@ -72,7 +74,7 @@ void startGame(){
     run++;
   }
 }
-// snake 좌표 이동
+// snake 좌표 이동 : 정민지(20191662), 권순민(20161290)
 void moveSnake(int direction) {
 	inputKey = getch();
 	// 방향 설정
@@ -198,8 +200,8 @@ void moveSnake(int direction) {
 
   //벽과 출돌한 경우 -> game over
   if(map[yPos[0]][xPos[0]] == 1) checkFail = true;
-  
-  
+
+
   // Tail방향으로 움직인 경우 -> game over
   if ((inputKey == KEY_UP && currentHead == 1) || (inputKey == KEY_DOWN && currentHead == 0)
       || (inputKey == KEY_LEFT && currentHead == 3) || (inputKey == KEY_RIGHT && currentHead == 2))
@@ -212,6 +214,7 @@ void moveSnake(int direction) {
   }
 }
 
+// 먹이와 독 출현 : 정민지(20191662)
 void setItem(){
   while(!checkFail){
     sleep(5);
@@ -222,7 +225,7 @@ void setItem(){
   }
 }
 
-// 먹이 생성 위치를 map의 값이 0인 곳 중 랜덤으로 지정
+// 먹이 생성 위치를 map의 값이 0인 곳 중 랜덤으로 지정 : 정민지(20191662)
 void growthItem(){
   mvprintw(preyX, preyY, " ");
   if(!checkPrey){  // 이전 먹이를 먹지 못했다면 다시 map의 값을 0로 바꾼다.
@@ -256,7 +259,7 @@ void growthItem(){
 	map[preyX][preyY] = 5;
 }
 
-// 독 생성 위치를 mapx의 값이 0인 곳 중 랜덤으로 지정
+// 독 생성 위치를 mapx의 값이 0인 곳 중 랜덤으로 지정 : 정민지(20191662)
 void poisonItem(){
   mvprintw(poisonX, poisonY, " ");
   if(!checkPoison){
@@ -288,10 +291,10 @@ void poisonItem(){
 		poisonY = rand() % width;
 	}
 	map[poisonX][poisonY] = 6;
-	
+
 }
 
-//stage별 맵 구현 : 권순민
+//stage별 맵 구현 : 권순민(20161290)
 void drawmap(int stage) {
 	if (stage == 1) {
 		screen = newwin(30, 50, 7, 7);
@@ -477,7 +480,7 @@ void drawmap(int stage) {
 		wrefresh(screen);
 	}
 }
-//맵을 그리기 전에 gate와 경계면 값 할당 :권순민
+//맵을 그리기 전에 gate와 경계면 값 할당 : 권순민(20161290)
 void gate(int stage) {
 	int counter = 0;
 	srand((unsigned)time(NULL));
@@ -637,7 +640,7 @@ void gate(int stage) {
 	}
 }
 
-//mission창 score창 프린트 : 권순민
+//mission창 score창 프린트 : 권순민(20161290)
 void mission_score() {
 	if (stage == 1) {
 		mission_B = 5;
@@ -685,7 +688,7 @@ void mission_score() {
 		checkF[0] = '(';
 		checkF[1] = ' ';
 		checkF[2] = ')';
-		
+
 	}
 	if (mission_G <= countGate && mission_G != 0) {
 		checkG[0] = '(';
@@ -697,7 +700,7 @@ void mission_score() {
 		checkG[0] = '(';
 		checkG[1] = ' ';
 		checkG[2] = ')';
-		
+
 	}
 	if (mission_P <= countPoison &&mission_P !=0) {
 		checkP[0] = '(';
@@ -709,7 +712,7 @@ void mission_score() {
 		checkP[0] = '(';
 		checkP[1] = ' ';
 		checkP[2] = ')';
-		
+
 	}
 	WINDOW* score;
 	WINDOW* mission;
@@ -746,16 +749,16 @@ void mission_score() {
 			for (int j = 0; j < 50; j++) {
 				map[i][j] = 0;
 			}
-			
+
 		}
 	}
 }
 
-// 초기 snake의 위치 지정
+// 초기 snake의 위치 지정 : 정민지(20191662)
 void initialize() {
 	yPos.clear();
 	xPos.clear();
-	yPos.push_back (height/2 ); 
+	yPos.push_back (height/2 );
 	yPos.push_back(height / 2 );
 	yPos.push_back(height / 2 );
 	xPos.push_back(width/2);
@@ -765,7 +768,8 @@ void initialize() {
 	map[height / 2 ][width / 2 ] = 4;
 	map[height/2][width / 2] = 4;
 }
-//다음 단계 넘어갈때 문구 : 권순민
+
+//다음 단계 넘어갈때 문구 : 권순민(20161290)
 void nextStage(int stage) {
 	if (stage == 2) {
 		clear();
@@ -811,7 +815,7 @@ void nextStage(int stage) {
 		clear();
 	}
 }
-//시작화면 : 권순민
+//시작화면 : 권순민(20161290)
 void title() {
 	mvprintw(20, 47, "------------------");
 	mvprintw(21, 47, "|                |");
@@ -831,16 +835,16 @@ void title() {
 	refresh();
 	sleep(5);
 }
-// game over화면 출력 : 권순민
+// game over화면 출력 : 권순민(20161290)
 void over() {
 	clear();
 	mvprintw(20, 47, "-----------------");
 	mvprintw(21, 47, "|   Game Over   |");
 	mvprintw(22, 47, "-----------------");
-	refresh();	
+	refresh();
 	currentstage = 6;
 	stage = 6;
-	
+
 }
 int main() {
 	setlocale(LC_ALL, "");
@@ -858,9 +862,8 @@ int main() {
 	tStart.join();
 	tSet.join();
 
-	
 	nextStage(stage);
 	endwin();
 	return 0;
-	
+
 }
